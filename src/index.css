@@ -1,0 +1,69 @@
+:root {
+  --bg-color: #111318;
+  --card-bg: #1c1f26;
+  --border-color: #2a2d35;
+  --text-primary: #f8fafc;
+  --text-muted: #64748b;
+  --accent: #ffffff;
+  --mobile-bottom-nav-height: 96px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Minimal Toggle ── */
+.pill-switch {
+  width: 44px;
+  height: 22px;
+  background: #2a2d35;
+  border-radius: 100px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pill-switch.active {
+  background: #ffffff;
+}
+
+.pill-switch .thumb {
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pill-switch.active .thumb {
+  transform: translateX(22px);
+  background: #111318;
+}
+
+/* ── Status Dot ── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.connected { background: #10b981; }
+.status-dot.disconnected { background: #ef4444; }
+
+/* ── Custom UI Transitions ── */
+.page-transition {
+  width: 100%;
+}
