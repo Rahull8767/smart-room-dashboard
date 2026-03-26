@@ -1,30 +1,18 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useOutlet } from 'react-router-dom';
 import { Box, Typography, IconButton } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useMqtt } from '../context/MqttContext';
 import { useAppContext } from '../context/AppContext';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
-
-const DRAWER_WIDTH = 220;
-const DESKTOP_QUERY = '@media (min-width:768px)';
-
-const sidebarMenuItems = [
-  { text: 'Dashboard', icon: DashboardRoundedIcon, path: '/' },
-  { text: 'Controls', icon: TuneRoundedIcon, path: '/control' },
-  { text: 'Timeline', icon: TimelineRoundedIcon, path: '/timeline' },
-  { text: 'Automation', icon: AutoAwesomeRoundedIcon, path: '/automation' },
-  { text: 'Devices', icon: DevicesRoundedIcon, path: '/devices' },
-  { text: 'Settings', icon: SettingsRoundedIcon, path: '/settings' },
-];
+import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
+import { useEffect } from 'react';
 
 const mobileBottomNavItems = [
   { text: 'Dashboard', icon: DashboardRoundedIcon, path: '/' },
   { text: 'Controls', icon: TuneRoundedIcon, path: '/control' },
+  { text: 'Energy', icon: BoltRoundedIcon, path: '/energy' },
   { text: 'Timeline', icon: TimelineRoundedIcon, path: '/timeline' },
   { text: 'Settings', icon: SettingsRoundedIcon, path: '/settings' },
 ];
@@ -35,67 +23,11 @@ const isPathActive = (pathname, path) => (
     : pathname === path || pathname.startsWith(`${path}/`)
 );
 
-const NavItem = ({ item, isActive, onClick }) => {
-  const Icon = item.icon;
-
-  return (
-    <Box
-      onClick={onClick}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        width: '100%',
-        px: 2.5,
-        py: 1,
-        mb: 0.5,
-        cursor: 'pointer',
-        color: isActive ? '#ffffff' : '#94a3b8',
-        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-        borderLeft: isActive ? '3px solid #ffffff' : '3px solid transparent',
-        transition: 'all 0.2s ease',
-        '&:hover': {
-          color: '#ffffff',
-          backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        },
-      }}
-    >
-      <Icon sx={{ fontSize: 18, opacity: isActive ? 1 : 0.7 }} />
-      <Typography sx={{ fontSize: 13, fontWeight: isActive ? 600 : 500, letterSpacing: '0.01em' }}>
-        {item.text}
-      </Typography>
-    </Box>
-  );
-};
-
-const SidebarContent = ({ location, navigate }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', pt: 3 }}>
-    <Box sx={{ px: 3, mb: 4 }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 18, color: '#ffffff', letterSpacing: '-0.5px' }}>
-        SmartRoom
-      </Typography>
-    </Box>
-
-    <Box sx={{ flex: 1 }}>
-      {sidebarMenuItems.map((item) => (
-        <NavItem
-          key={item.text}
-          item={item}
-          isActive={isPathActive(location.pathname, item.path)}
-          onClick={() => navigate(item.path)}
-        />
-      ))}
-    </Box>
-
-    <Box sx={{ px: 3, py: 3, borderTop: '1px solid #2a2d35' }}>
-      <Typography sx={{ color: '#475569', fontSize: 11, fontWeight: 500 }}>
-        v1.0.2 - ESP32
-      </Typography>
-    </Box>
-  </Box>
+const getActiveNavPath = (pathname) => (
+  mobileBottomNavItems.find((item) => isPathActive(pathname, item.path))?.path ?? pathname
 );
 
-const MobileBottomNav = ({ location, navigate }) => (
+const MobileBottomNav = ({ activePath, navigate }) => (
   <Box
     component="nav"
     aria-label="Bottom navigation"
@@ -111,17 +43,17 @@ const MobileBottomNav = ({ location, navigate }) => (
       width: '100%',
       px: 1.5,
       pt: 1,
+      minHeight: '60px',
       pb: 'calc(12px + env(safe-area-inset-bottom))',
-      backgroundColor: '#1c1f26',
-      borderTop: '1px solid #2a2d35',
-      [DESKTOP_QUERY]: {
-        display: 'none',
-      },
+      backgroundColor: 'rgba(4, 6, 8, 0.8)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderTop: '1px solid var(--border-color)',
     }}
   >
     {mobileBottomNavItems.map((item) => {
       const Icon = item.icon;
-      const isActive = isPathActive(location.pathname, item.path);
+      const isActive = activePath === item.path;
 
       return (
         <Box
@@ -153,8 +85,8 @@ const MobileBottomNav = ({ location, navigate }) => (
               px: 1,
               py: 0.9,
               borderRadius: '14px',
-              color: isActive ? '#3b82f6' : '#6b7280',
-              backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+              color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+              backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
               transition: 'color 180ms ease, background-color 180ms ease',
             }}
           >
@@ -162,10 +94,16 @@ const MobileBottomNav = ({ location, navigate }) => (
             <Typography
               component="span"
               sx={{
-                fontSize: 11,
+                fontSize: 10,
                 lineHeight: 1.2,
-                fontWeight: isActive ? 600 : 500,
+                fontWeight: isActive ? 700 : 500,
                 color: 'inherit',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: 'block',
+                width: '100%',
+                textAlign: 'center'
               }}
             >
               {item.text}
@@ -180,53 +118,45 @@ const MobileBottomNav = ({ location, navigate }) => (
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { status } = useMqtt();
+  const outlet = useOutlet();
+  const { status, offlineMode } = useMqtt();
   const { settings } = useAppContext();
 
   const isConnected = status === 'connected';
   const roomName = settings?.roomName || 'Bedroom';
+  const activePath = getActiveNavPath(location.pathname);
+
+  useEffect(() => {
+    if (offlineMode) {
+      document.body.classList.add('offline-theme');
+    } else {
+      document.body.classList.remove('offline-theme');
+    }
+  }, [offlineMode]);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#111318' }}>
-      <Box
-        component="nav"
-        sx={{
-          width: 0,
-          flexShrink: 0,
-          display: 'none',
-          borderRight: '1px solid #2a2d35',
-          [DESKTOP_QUERY]: {
-            width: DRAWER_WIDTH,
-            display: 'block',
-          },
-        }}
-      >
-        <Box sx={{ width: DRAWER_WIDTH, height: '100vh', position: 'fixed', left: 0, top: 0 }}>
-          <SidebarContent location={location} navigate={navigate} />
-        </Box>
-      </Box>
-
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: 'var(--bg-color)', overflowX: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             px: 2,
-            py: 2,
+            pt: 'calc(16px + env(safe-area-inset-top))',
+            pb: 2,
             borderBottom: '1px solid #2a2d35',
-            backgroundColor: '#111318',
+            backgroundColor: 'rgba(4, 6, 8, 0.8)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             position: 'sticky',
             top: 0,
             zIndex: 100,
-            [DESKTOP_QUERY]: {
-              px: 4,
-            },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-              <Typography sx={{ fontWeight: 600, fontSize: 16, color: '#f8fafc' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary)' }}>
                 {roomName}
               </Typography>
               <Box className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`} sx={{ width: 10, height: 10 }} />
@@ -235,6 +165,14 @@ const Layout = () => {
             <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, ml: 1 }}>
               {isConnected ? 'Connected' : 'Disconnected'}
             </Typography>
+            
+            {offlineMode && (
+              <Box sx={{ ml: 2, px: 1.5, py: 0.5, borderRadius: 999, backgroundColor: 'rgba(245, 158, 11, 0.15)' }}>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.05em' }}>
+                  OFFLINE
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <IconButton
@@ -246,38 +184,26 @@ const Layout = () => {
           </IconButton>
         </Box>
 
-        <Box
+          <Box
           component="main"
           sx={{
             flexGrow: 1,
             px: 2,
             pt: 2,
-            pb: 'calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom))',
-            maxWidth: 1200,
+            pb: '100px', // Exact scroll view fix for mobile safe area requested
             width: '100%',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
             mx: 'auto',
-            [DESKTOP_QUERY]: {
-              px: 4,
-              pt: 4,
-              pb: 4,
-            },
           }}
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Box key={location.pathname} sx={{ width: '100%' }}>
+            {outlet}
+          </Box>
         </Box>
       </Box>
 
-      <MobileBottomNav location={location} navigate={navigate} />
+      <MobileBottomNav activePath={activePath} navigate={navigate} />
     </Box>
   );
 };

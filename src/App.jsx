@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ControlPanel from './pages/ControlPanel';
 import Timeline from './pages/Timeline';
 import Automation from './pages/Automation';
+import Energy from './pages/Energy';
 import Settings from './pages/Settings';
 import Devices from './pages/Devices';
 import { MqttProvider } from './context/MqttContext';
@@ -17,6 +18,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="control" element={<ControlPanel />} />
           <Route path="timeline" element={<Timeline />} />
+          <Route path="energy" element={<Energy />} />
           <Route path="automation" element={<Automation />} />
           <Route path="settings" element={<Settings />} />
           <Route path="devices" element={<Devices />} />

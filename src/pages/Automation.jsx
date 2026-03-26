@@ -8,38 +8,39 @@ import { useAppContext } from '../context/AppContext';
 const SENSORS = ['motion', 'sound', 'door', 'temperature', 'humidity'];
 const DEVICES = ['light', 'fan'];
 
-const StyledSelect = ({ label, value, onChange, children }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-    <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-      {label}
-    </Typography>
-    <Box
-      component="select"
-      value={value}
-      onChange={onChange}
-      sx={{
-        backgroundColor: '#111318',
-        border: '1px solid #2a2d35',
-        borderRadius: 1,
-        color: '#f8fafc',
-        fontSize: 13,
-        fontWeight: 500,
-        p: '10px 12px',
-        outline: 'none',
-        cursor: 'pointer',
-        transition: 'border-color 0.2s',
-        '&:focus': { borderColor: '#ffffff' },
-        '& option': { background: '#1c1f26', color: '#f8fafc' },
-      }}
-    >
-      {children}
+const SwipeableRule = ({ rule, getRuleText, toggleRule, deleteRule }) => {
+  const [offset, setOffset] = useState(0);
+  const handleTouchStart = (e) => { e.currentTarget.startX = e.touches[0].clientX; };
+  const handleTouchMove = (e) => {
+    const x = e.touches[0].clientX;
+    const diff = e.currentTarget.startX - x;
+    if (diff > 0 && diff < 100) setOffset(-diff);
+  };
+  const handleTouchEnd = () => setOffset(offset < -40 ? -80 : 0);
+  return (
+    <Box sx={{ position: 'relative', mb: 1.5, overflow: 'hidden', borderRadius: 3 }}>
+      <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => deleteRule(rule.id)}>
+         <DeleteOutlineRoundedIcon sx={{ color: '#fff' }} />
+      </Box>
+      <Paper 
+        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} 
+        elevation={0}
+        sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 3, transform: `translateX(${offset}px)`, transition: offset === 0 || offset === -80 ? 'transform 0.2s ease' : 'none' }}>
+        <Box>
+           <Typography sx={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{getRuleText(rule)}</Typography>
+           <Typography variant="caption" sx={{ color: rule.enabled ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>{rule.enabled ? 'Enabled' : 'Disabled'}</Typography>
+        </Box>
+        <Switch size="small" checked={rule.enabled} onChange={(e) => { e.stopPropagation(); toggleRule(rule.id); }}
+           sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--accent)' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--accent-glow)' } }} />
+      </Paper>
     </Box>
-  </Box>
-);
+  );
+};
 
 const Automation = () => {
   const { automationRules, addRule, deleteRule, toggleRule } = useAppContext();
 
+  const [wizardStep, setWizardStep] = useState(0);
   const [conditionSensor, setConditionSensor] = useState('motion');
   const [conditionOperator, setConditionOperator] = useState('==');
   const [conditionValue, setConditionValue] = useState('detected');
@@ -81,75 +82,55 @@ const Automation = () => {
         </Typography>
       </Box>
 
-      {/* Rule Builder */}
-      <Paper sx={{ p: 4, mb: 6, backgroundColor: '#1c1f26', border: '1px solid #2a2d35' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-          <AutoAwesomeRoundedIcon sx={{ color: '#ffffff', fontSize: 16 }} />
-          <Typography sx={{ fontWeight: 600, color: '#f8fafc', fontSize: 15 }}>New Rule</Typography>
-        </Box>
-
-        <Grid container spacing={3} alignItems="flex-end">
-          <Grid item xs={12} sm={3}>
-            <StyledSelect label="Trigger" value={conditionSensor} onChange={(e) => setConditionSensor(e.target.value)}>
-              {SENSORS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-            </StyledSelect>
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            {conditionSensor === 'sound' ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>Threshold (dB)</Typography>
-                <Box
-                  component="input"
-                  type="number"
-                  value={conditionValue}
-                  onChange={(e) => setConditionValue(e.target.value)}
-                  sx={{
-                    backgroundColor: '#111318',
-                    border: '1px solid #2a2d35',
-                    borderRadius: 1,
-                    color: '#f8fafc',
-                    fontSize: 13,
-                    p: '10px 12px',
-                    outline: 'none',
-                    '&:focus': { borderColor: '#ffffff' },
-                  }}
-                />
-              </Box>
-            ) : conditionSensor === 'door' ? (
-              <StyledSelect label="Condition" value={conditionValue} onChange={(e) => setConditionValue(e.target.value)}>
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
-              </StyledSelect>
-            ) : (
-              <StyledSelect label="Condition" value={conditionValue} onChange={(e) => setConditionValue(e.target.value)}>
-                <option value="detected">Detected</option>
-                <option value="clear">Clear</option>
-              </StyledSelect>
-            )}
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <StyledSelect label="Action" value={actionDevice} onChange={(e) => setActionDevice(e.target.value)}>
-              {DEVICES.map(d => <option key={d} value={d}>Turn {d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
-            </StyledSelect>
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <StyledSelect label="State" value={actionState} onChange={(e) => setActionState(e.target.value)}>
-              <option value="on">On</option>
-              <option value="off">Off</option>
-            </StyledSelect>
-          </Grid>
-          <Grid item xs={12} sm={1}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleAddRule}
-              sx={{ height: 42, minWidth: 42 }}
-            >
-              <AddRoundedIcon fontSize="small" />
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+      {/* Rule Builder Wizard */}
+      <Box sx={{ mb: 6 }}>
+        {wizardStep === 0 && (
+          <Button variant="contained" fullWidth onClick={() => setWizardStep(1)} sx={{ py: 2, backgroundColor: 'var(--card-bg)', border: '1px dashed var(--accent)', color: 'var(--accent)', fontWeight: 700, boxShadow: 'none', '&:hover': { backgroundColor: 'var(--accent-light)' } }}>
+            <AddRoundedIcon sx={{ mr: 1 }} /> Create New Automation
+          </Button>
+        )}
+        {wizardStep === 1 && (
+          <Paper sx={{ p: 4, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 4, elevation: 0 }}>
+             <Typography sx={{ color: 'var(--accent)', fontWeight: 700, mb: 3, letterSpacing: '0.05em' }}>STEP 1: IF THIS HAPPENS...</Typography>
+             <Grid container spacing={2}>
+               {SENSORS.map(s => (
+                 <Grid item xs={6} key={s}>
+                   <Box onClick={() => { setConditionSensor(s); setConditionValue(s === 'sound' ? 70 : s === 'door' ? 'open' : 'detected'); setWizardStep(2); }} sx={{ p: 2.5, border: '1px solid var(--border-color)', borderRadius: 3, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s ease', '&:hover': { borderColor: 'var(--accent)', background: 'var(--accent-light)' } }}>
+                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{s}</Typography>
+                   </Box>
+                 </Grid>
+               ))}
+             </Grid>
+          </Paper>
+        )}
+        {wizardStep === 2 && (
+          <Paper sx={{ p: 4, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 4, elevation: 0 }}>
+             <Typography sx={{ color: 'var(--accent)', fontWeight: 700, mb: 3, letterSpacing: '0.05em' }}>STEP 2: THEN DO THIS...</Typography>
+             <Grid container spacing={2}>
+               {DEVICES.map(d => (
+                 <Grid item xs={6} key={d}>
+                   <Box onClick={() => { setActionDevice(d); setActionState('on'); setWizardStep(3); }} sx={{ p: 2.5, border: '1px solid var(--border-color)', borderRadius: 3, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s ease', '&:hover': { borderColor: 'var(--accent)', background: 'var(--accent-light)' } }}>
+                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{d}</Typography>
+                   </Box>
+                 </Grid>
+               ))}
+             </Grid>
+          </Paper>
+        )}
+        {wizardStep === 3 && (
+          <Paper sx={{ p: 4, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 4, elevation: 0 }}>
+             <Typography sx={{ color: 'var(--accent)', fontWeight: 700, mb: 3, letterSpacing: '0.05em' }}>STEP 3: CONFIRM AUTOMATION</Typography>
+             <Box sx={{ p: 3, backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: 2, mb: 4, border: '1px solid var(--border-color)' }}>
+               <Typography sx={{ color: 'var(--text-primary)', fontSize: 15, fontWeight: 500, lineHeight: 1.6 }}>
+                  If <span style={{ color: 'var(--accent)'}}>{conditionSensor}</span> is triggered, then turn <span style={{ color: 'var(--accent)'}}>{actionDevice}</span> <span style={{ color: 'var(--accent)'}}>ON</span>.
+               </Typography>
+             </Box>
+             <Button variant="contained" fullWidth onClick={() => { handleAddRule(); setWizardStep(0); }} sx={{ py: 1.5, backgroundColor: 'var(--accent)', color: '#000', fontWeight: 800, fontSize: 13, '&:hover': { background: '#00c853' } }}>
+               Save Automation
+             </Button>
+          </Paper>
+        )}
+      </Box>
 
       {/* Rules List */}
       <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#475569', mb: 2.5, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
@@ -157,36 +138,13 @@ const Automation = () => {
       </Typography>
 
       {automationRules.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8, backgroundColor: '#1c1f26', border: '1px dashed #2a2d35', borderRadius: 2 }}>
-          <Typography sx={{ color: '#475569', fontSize: 13 }}>No rules defined yet.</Typography>
+        <Box sx={{ textAlign: 'center', py: 8, backgroundColor: 'var(--card-bg)', border: '1px dashed var(--border-color)', borderRadius: 4 }}>
+          <Typography sx={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>No rules defined yet.</Typography>
         </Box>
       ) : (
         <List disablePadding>
           {automationRules.map((rule) => (
-            <Paper key={rule.id} sx={{ mb: 1.5, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1c1f26', border: '1px solid #2a2d35' }}>
-              <Box>
-                <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#f8fafc' }}>
-                  {getRuleText(rule)}
-                </Typography>
-                <Typography variant="caption" sx={{ color: rule.enabled ? '#10b981' : '#64748b', fontWeight: 600 }}>
-                  {rule.enabled ? 'Enabled' : 'Disabled'}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Switch
-                  size="small"
-                  checked={rule.enabled}
-                  onChange={() => toggleRule(rule.id)}
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#ffffff' },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#475569' },
-                  }}
-                />
-                <IconButton size="small" onClick={() => deleteRule(rule.id)} sx={{ color: '#475569', '&:hover': { color: '#ef4444' } }}>
-                  <DeleteOutlineRoundedIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Paper>
+            <SwipeableRule key={rule.id} rule={rule} getRuleText={getRuleText} toggleRule={toggleRule} deleteRule={deleteRule} />
           ))}
         </List>
       )}

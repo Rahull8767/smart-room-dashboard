@@ -1,17 +1,31 @@
 :root {
-  --bg-color: #111318;
-  --card-bg: #1c1f26;
-  --border-color: #2a2d35;
-  --text-primary: #f8fafc;
-  --text-muted: #64748b;
-  --accent: #ffffff;
-  --mobile-bottom-nav-height: 96px;
+  --bg-color: #000000;
+  --card-bg: #0A0A0C;
+  --border-color: #1F1F22;
+  --text-primary: #FFFFFF;
+  --text-muted: #8B8D98;
+  --accent: #39FF14;
+  --accent-glow: rgba(57, 255, 20, 0.4);
+  --accent-light: rgba(57, 255, 20, 0.15);
+  --mobile-bottom-nav-height: 80px;
+}
+
+body.offline-theme {
+  --accent: #FF9100;
+  --accent-glow: rgba(255, 145, 0, 0.4);
+  --accent-light: rgba(255, 145, 0, 0.15);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
 body,
 #root {
   min-height: 100%;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -20,37 +34,40 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
+  word-break: break-word;
 }
 
 /* ── Minimal Toggle ── */
 .pill-switch {
-  width: 44px;
-  height: 22px;
-  background: #2a2d35;
+  width: 50px;
+  height: 28px;
+  background-color: #2C2C2E;
   border-radius: 100px;
   position: relative;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background-color 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.4s ease;
 }
 
 .pill-switch.active {
-  background: #ffffff;
+  background-color: #30D158;
+  box-shadow: 0 0 12px rgba(48, 209, 88, 0.4);
 }
 
 .pill-switch .thumb {
-  width: 16px;
-  height: 16px;
-  background: white;
+  width: 24px;
+  height: 24px;
+  background: #ffffff;
   border-radius: 50%;
   position: absolute;
-  top: 3px;
-  left: 3px;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  top: 2px;
+  left: 2px;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .pill-switch.active .thumb {
   transform: translateX(22px);
-  background: #111318;
+  background: #ffffff;
 }
 
 /* ── Status Dot ── */
@@ -59,11 +76,32 @@ body {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
-.status-dot.connected { background: #10b981; }
-.status-dot.disconnected { background: #ef4444; }
+.status-dot.connected { 
+  background: var(--accent); 
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.status-dot.disconnected { 
+  background: #ef4444; 
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
 
 /* ── Custom UI Transitions ── */
 .page-transition {
   width: 100%;
+}
+
+.MuiPaper-root, .MuiButtonBase-root {
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease !important;
+}
+
+.MuiPaper-root:active, .MuiButtonBase-root:active, .pill-switch:active {
+  transform: scale(0.96) !important;
+}
+
+@keyframes pulseGlow {
+  0% { filter: drop-shadow(0 0 2px var(--accent-glow)); opacity: 0.7; }
+  50% { filter: drop-shadow(0 0 10px var(--accent-light)); opacity: 1; }
+  100% { filter: drop-shadow(0 0 2px var(--accent-glow)); opacity: 0.7; }
 }

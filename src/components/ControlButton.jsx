@@ -1,52 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Box, Paper } from '@mui/material';
 
-const ControlButton = ({ title, icon: Icon, isOn, onClick, disabled = false }) => {
+const ControlButton = ({ title, icon: Icon, isOn: serverIsOn, onClick, disabled = false }) => {
+  const [optimisticState, setOptimisticState] = useState(serverIsOn);
+
+  useEffect(() => {
+    setOptimisticState(serverIsOn);
+  }, [serverIsOn]);
+  const handleToggle = (e) => {
+    if (!disabled) {
+      if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(20);
+      setOptimisticState(!optimisticState);
+      if (onClick) onClick(e);
+    }
+  };
+
+  const isOn = optimisticState;
+
   return (
     <Paper
       elevation={0}
-      onClick={!disabled ? onClick : undefined}
+      onClick={handleToggle}
       sx={{
-        p: 2.5,
+        p: 2,
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         justifyContent: 'space-between',
+        height: '100%',
+        minHeight: 110,
         cursor: disabled ? 'default' : 'pointer',
-        backgroundColor: '#1c1f26',
-        border: '1px solid',
-        borderColor: isOn ? 'rgba(255, 255, 255, 0.2)' : '#2a2d35',
-        borderRadius: 8,
-        transition: 'all 0.2s ease',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(15px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: isOn ? '0 0 20px var(--accent-glow)' : 'none',
+        borderRadius: '16px',
+        transition: 'all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55)',
         opacity: disabled ? 0.5 : 1,
         '&:hover': {
-          borderColor: isOn ? 'rgba(255, 255, 255, 0.4)' : '#3f4451',
-          background: 'rgba(255, 255, 255, 0.02)',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
         },
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: isOn ? '#ffffff' : '#475569',
-          opacity: isOn ? 1 : 0.6
+          color: isOn ? 'var(--accent)' : 'var(--text-muted)',
+          transition: 'color 0.4s ease'
         }}>
-          <Icon sx={{ fontSize: 20 }} />
+          <Icon sx={{ fontSize: 24 }} />
         </Box>
-        <Box>
-          <Typography sx={{ fontWeight: 600, fontSize: 14, color: '#f8fafc', lineHeight: 1.2 }}>
-            {title}
-          </Typography>
-          <Typography sx={{ fontSize: 11, fontWeight: 500, color: '#64748b', mt: 0.2 }}>
-            {isOn ? 'Active' : 'Standby'}
-          </Typography>
+        {/* Minimal Pill Switch */}
+        <Box className={`pill-switch ${isOn ? 'active' : ''}`}>
+          <Box className="thumb" />
         </Box>
       </Box>
 
-      {/* Minimal Pill Switch */}
-      <Box className={`pill-switch ${isOn ? 'active' : ''}`}>
-        <Box className="thumb" />
+      <Box sx={{ mt: 2 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        <Typography sx={{ fontSize: 11, fontWeight: 500, color: isOn ? 'var(--accent)' : 'var(--text-muted)', mt: 0.3 }}>
+          {isOn ? 'On' : 'Off'}
+        </Typography>
       </Box>
     </Paper>
   );

@@ -7,6 +7,7 @@ class MqttService {
     this.connectionCallback = null;
     this.status = 'disconnected'; // disconnected, connecting, connected, error
     this.isConnecting = false;
+    this.messageQueue = [];
   }
 
   connectMQTT(brokerUrl = 'wss://fc67e364fad54bc38e2e62d77e7751d1.s1.eu.hivemq.cloud:8884/mqtt', username = 'rahull', password = 'Rahul@123', onConnectStatusChange = null) {
@@ -32,7 +33,7 @@ class MqttService {
         clientId: `smart-room-web-${Math.random().toString(16).substring(2, 10)}`,
         clean: true,
         connectTimeout: 5000,
-        reconnectPeriod: 2000,
+        reconnectPeriod: 5000,
         username: username,
         password: password,
         protocolVersion: 4
@@ -46,6 +47,7 @@ class MqttService {
         this.updateStatus('connected');
         this.isConnecting = false;
         this.resubscribeAll();
+        this.processQueue();
       });
 
       this.client.on('error', (err) => {
@@ -96,6 +98,18 @@ class MqttService {
     this.status = newStatus;
     if (this.connectionCallback) {
       this.connectionCallback(this.status);
+    }
+  }
+
+  processQueue() {
+    if (this.messageQueue && this.messageQueue.length > 0) {
+      console.log(`Processing ${this.messageQueue.length} queued messages...`);
+      this.messageQueue.forEach(({ topic, payload }) => {
+        if (this.client && this.client.connected) {
+          this.client.publish(topic, payload, { qos: 0, retain: false });
+        }
+      });
+      this.messageQueue = [];
     }
   }
 
@@ -155,8 +169,8 @@ class MqttService {
   }
 
   publishMessage(topic, messageObj) {
+    const payload = typeof messageObj === 'string' ? messageObj : JSON.stringify(messageObj);
     if (this.client && this.client.connected) {
-      const payload = typeof messageObj === 'string' ? messageObj : JSON.stringify(messageObj);
       console.log(`Publishing: ${topic} - ${payload}`);
       this.client.publish(topic, payload, { qos: 0, retain: false }, (err) => {
         if (err) {
@@ -164,7 +178,8 @@ class MqttService {
         }
       });
     } else {
-      console.error('Cannot publish, MQTT client disconnected');
+      console.log(`MQTT offline. Queuing message: ${topic} - ${payload}`);
+      this.messageQueue.push({ topic, payload });
     }
   }
 
